@@ -65,23 +65,7 @@
       font-size: 24px;
       color: #fff;
       margin-top: 16px;
-    }
-    #debug-log {
-      position: fixed;
-      bottom: 10px;
-      left: 10px;
-      right: 10px;
-      max-height: 200px;
-      overflow-y: auto;
-      background: rgba(0,0,0,0.8);
-      color: #2dd4a8;
-      font-family: monospace;
-      font-size: 14px;
-      padding: 8px;
-      border-radius: 4px;
-      z-index: 100;
-      white-space: pre-wrap;
-      word-break: break-all;
+      text-align: center;
     }
   </style>
 </head>
@@ -93,29 +77,20 @@
 
   <div id="loading-overlay" class="hidden">
     <div class="spinner"></div>
-    <div class="loading-text">Loading video...</div>
+    <div class="loading-text" id="loading-text">Loading video...</div>
   </div>
 
   <div id="player-container">
     <div id="youtube-player"></div>
   </div>
 
-  <div id="debug-log"></div>
-
   <script src="https://www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
   <script src="https://www.youtube.com/iframe_api"></script>
   <script>
     var NAMESPACE = 'urn:x-cast:com.safewatch.cast';
 
-    var debugEl = document.getElementById('debug-log');
-    var debugLines = [];
     function debugLog(msg) {
-      var ts = new Date().toLocaleTimeString();
-      var line = ts + ' ' + msg;
-      console.log(line);
-      debugLines.push(line);
-      if (debugLines.length > 15) debugLines.shift();
-      debugEl.textContent = debugLines.join('\n');
+      console.log(new Date().toLocaleTimeString() + ' ' + msg);
     }
 
     var ytPlayer = null;
@@ -131,6 +106,7 @@
     var isTransitioning = false;
     var expectedVideoId = '';
     var playingConfirmed = false;
+    var adMessageTimer = null;
 
     debugLog('Receiver loading...');
 
@@ -149,11 +125,24 @@
     }
 
     function showLoading() {
+      var loadingText = document.getElementById('loading-text');
+      loadingText.textContent = 'Loading video...';
       document.getElementById('loading-overlay').classList.remove('hidden');
+      if (adMessageTimer) clearTimeout(adMessageTimer);
+      adMessageTimer = setTimeout(function() {
+        if (!document.getElementById('loading-overlay').classList.contains('hidden')) {
+          loadingText.textContent = 'Your show is starting soon, please wait...';
+        }
+      }, 4000);
     }
 
     function hideLoading() {
       document.getElementById('loading-overlay').classList.add('hidden');
+      if (adMessageTimer) {
+        clearTimeout(adMessageTimer);
+        adMessageTimer = null;
+      }
+      document.getElementById('loading-text').textContent = 'Loading video...';
     }
 
     function getElapsedPlaySeconds() {
